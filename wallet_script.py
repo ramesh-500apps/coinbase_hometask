@@ -1,8 +1,7 @@
-from cdp import Cdp, Wallet  # Ensure these are imported correctly from the CDP SDK
+from cdp import Cdp, Wallet  
 import os
 import json
 
-# API Key Name and Private Key (replace with actual values from your Coinbase account)
 api_key_name = "organizations/77b84c86-7548-48cd-8598-0825aebefceb/apiKeys/c93805f1-ad0e-4fef-b466-ca8a977b6c39"
 api_key_private_key = '''-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIPcz+JJTCAASHCLGc2si9yFaNDyDC7xR/ichbcZbX+nOoAoGCCqGSM49
