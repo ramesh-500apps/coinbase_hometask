@@ -1,18 +1,17 @@
-# Coinbase Home Task - Wallet Script
+# Coinbase Wallet Creation, Funding, and Info Display Script
 
 ## Overview
 
-This Python script allows you to create and manage a persistent wallet on the Base testnet, fund it using the Base testnet faucet, and display wallet information, including the balance in ETH.
+This script allows you to:
+1. Create a persistent wallet on the Base testnet.
+2. Fund the wallet using the Base testnet faucet.
+3. Display the wallet's address and balance in ETH.
 
-The wallet is persistent across script executions, and the script handles wallet creation, funding from a faucet, and balance checking.
+It uses the **Coinbase Developer Kit (CDP SDK)** to interact with the Coinbase network.
 
-## Requirements
+## Prerequisites
 
-- Python 3.7 or later
-- Install required Python packages:
-  - web3: Used for interacting with Ethereum-based networks.
-  - requests: Used for making HTTP requests to the faucet.
-
-### Install dependencies:
-```bash
-pip install web3 requests
+1. **Python 3.11+** (ensure you are using the appropriate version).
+2. Install required dependencies:
+   ```bash
+   pip install cdp-sdk

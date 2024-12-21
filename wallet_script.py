@@ -1,85 +1,75 @@
+from cdp import Cdp, Wallet  # Ensure these are imported correctly from the CDP SDK
 import os
 import json
-import logging
-from eth_account import Account
-import requests
-from web3 import Web3
-import time
 
-WALLET_FILE = "wallet.json"  # File to store wallet details
-FAUCET_URL = "http://faucet.base.org"  # URL for the faucet to fund the wallet
-RPC_URL = "https://rpc.base.org/testnet"  # RPC URL for interacting with the Ethereum testnet
+# API Key Name and Private Key (replace with actual values from your Coinbase account)
+api_key_name = "organizations/77b84c86-7548-48cd-8598-0825aebefceb/apiKeys/c93805f1-ad0e-4fef-b466-ca8a977b6c39"
+api_key_private_key = '''-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIPcz+JJTCAASHCLGc2si9yFaNDyDC7xR/ichbcZbX+nOoAoGCCqGSM49
+AwEHoUQDQgAEAq7dXZPbqqYazjGwwLpR3RxwCkYV3UAuvomlL9vqL9iW1+v4Wtti
+z0iDh23C5GYepBVuXGzUTL2IEhfKkdWLJA==
+-----END EC PRIVATE KEY-----'''
 
-# Set up logging configuration
-logging.basicConfig(level=logging.INFO)
+# Configure the CDP SDK with your API credentials
+Cdp.configure(api_key_name=api_key_name, api_key_private_key=api_key_private_key)
 
-def load_wallet():
-    """
-    Load wallet data from a file. If the wallet does not exist, create a new wallet and save it to a file.
-    """
-    if os.path.exists(WALLET_FILE):
-        with open(WALLET_FILE, 'r') as file:
+# File to store the wallet seed (or private key)
+wallet_seed_file = "wallet_seed.json"
+
+def create_wallet():
+    # Check if a wallet seed already exists to maintain wallet persistence
+    if os.path.exists(wallet_seed_file):
+        with open(wallet_seed_file, "r") as file:
             wallet_data = json.load(file)
-            logging.info("Wallet loaded successfully.")
-            return wallet_data
+        print(f"Wallet already exists. Using existing wallet with address: {wallet_data['address']}")
+        return wallet_data
     else:
-        wallet = Account.create()  # Create a new Ethereum wallet
+        # Create a new wallet
+        wallet = Wallet.create()
+
+        # Save the wallet's seed and public address for persistence
         wallet_data = {
-            "address": wallet.address,  # Wallet address
-            "private_key": wallet._private_key.hex()  # Private key in hex format
+            "seed": wallet.seed,
+            "address": wallet.address
         }
-        with open(WALLET_FILE, 'w') as file:
+
+        with open(wallet_seed_file, "w") as file:
             json.dump(wallet_data, file)
-            logging.info(f"New wallet created and saved with address {wallet.address}.")
-            return wallet_data
+
+        print(f"New wallet created with address: {wallet.address}")
+        return wallet_data
 
 def fund_wallet(wallet_address):
-    """
-    Request funds for the wallet from the faucet.
-    """
+    # Interact with the faucet API to fund the wallet
     try:
-        response = requests.post(FAUCET_URL, json={'address': wallet_address})
+        faucet_url = "https://faucet.base.org"  # Assuming the faucet URL for the Base testnet
+        response = Cdp.fund_wallet(wallet_address, faucet_url)
+
         if response.status_code == 200:
-            logging.info("Faucet request sent successfully.")
-            return True
+            print(f"Wallet {wallet_address} successfully funded.")
         else:
-            logging.error(f"Failed to fund wallet. Status code: {response.status_code}")
-            return False
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error occurred while requesting faucet funds: {e}")
-        return False
-
-def check_balance(wallet_address, web3):
-    """
-    Check the balance of the wallet.
-    """
-    try:
-        balance = web3.eth.get_balance(wallet_address)  # Get wallet balance in Wei
-        eth_balance = web3.fromWei(balance, 'ether')  # Convert balance to ETH
-        logging.info(f"Wallet balance: {eth_balance} ETH")
-        return eth_balance
+            print(f"Failed to fund the wallet: {response.text}")
     except Exception as e:
-        logging.error(f"Error checking balance: {e}")
-        return None
+        print(f"Error funding wallet: {str(e)}")
 
-def main():
-    """
-    Main function to load the wallet, request funds, and check the balance.
-    """
-    # Connect to the Ethereum testnet
-    web3 = Web3(Web3.HTTPProvider(RPC_URL))
+def display_wallet_info(wallet_address):
+    try:
+        # Retrieve wallet balance
+        balance = Cdp.get_balance(wallet_address)
+        
+        # Assuming the balance is returned in Wei, convert to ETH
+        balance_eth = balance / 1e18
 
-    # Load or create wallet data
-    wallet_data = load_wallet()
+        print(f"Wallet Address: {wallet_address}")
+        print(f"Balance: {balance_eth:.4f} ETH")
+    except Exception as e:
+        print(f"Error fetching wallet info: {str(e)}")
 
-    logging.info(f"Wallet address: {wallet_data['address']}")
+# Create or load the wallet
+wallet_info = create_wallet()
 
-    # Request funds and check balance
-    if fund_wallet(wallet_data['address']):
-        time.sleep(10)  # Wait for the faucet transaction to complete
-        check_balance(wallet_data['address'], web3)
-    else:
-        logging.error("Failed to fund the wallet.")
+# Fund the wallet
+fund_wallet(wallet_info["address"])
 
-if __name__ == "__main__":
-    main()
+# Display wallet information
+display_wallet_info(wallet_info["address"])
